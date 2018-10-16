@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html>
+<link>
+    <meta charset="UTF-8">
+    <title>vue example</title>
+    <script src="js/vue.js"></script>
+    <script src="js/vue-resource.min.js"></script>
+    <script src="js/index.js"></script>
+    <link rel="stylesheet" href="css/index.css"></link>
+    <style>
+
+        .el-header {
+            background-color: #B3C0D1;
+            color: #333;
+            line-height: 60px;
+        }
+
+        .el-aside {
+            color: #333;
+        }
+        .demo-table-expand {
+            font-size: 0;
+        }
+        .demo-table-expand label {
+            width: 90px;
+            color: #99a9bf;
+        }
+        .demo-table-expand .el-form-item {
+            margin-right: 0;
+            margin-bottom: 0;
+            width: 50%;
+        }
+    </style>
+</head>
+<script>
+    //页面关闭执行
+    window.addEventListener("beforeunload", function(event) {
+
+    });
+
+</script>
+<body>
+<div id="app" >
+
+    <!--<input type="button" @click="get()" value="点击" />-->
+
+
+
+    <el-container style="height:800px; border: 1px solid #eee">
+        <el-aside  style="background-color: rgb(238, 241, 246)">
+            <el-table
+                    :data="tables"
+                    border
+                    @row-click="openTable"
+                    style="width: 100%">
+                <el-table-column
+                        prop="tablename" label="表" style="width:100%">
+                </el-table-column>
+
+
+
+            </el-table>
+        </el-aside>
+
+        <el-container>
+            <!--<el-header style="width:100%;height:30%;text-align: right; font-size: 12px">
+
+            </el-header>-->
+
+            <el-main style="width:100%;height:100%">
+                <el-table
+                        :data="tableData"
+                        border
+                        stripe
+                        style="width: 100%;background: #c6e2ff"
+                        :header-cell-style="{
+                            'background-color': '#c6e2ff'
+
+                        }"
+                        :cell-style="{
+                            'background-color': '#c6e2ff'
+
+                        }"
+                        >
+
+                    <el-table-column  prop="rowkey" label="行号(hash值-组织编号:数据采集器编号:组件编号<逆变器|组件>)" style="width:90%">
+                    </el-table-column>
+                    <el-table-column
+                            fixed="right"
+                            label="操作"
+                            style="width:10%">
+                        <template slot-scope="scope">
+                            <el-button @click="handleClick(scope.row)" type="text" size="small">详细查询</el-button>
+
+                        </template>
+                    </el-table-column>
+
+
+                </el-table>
+                <div align="center">
+                    <el-pagination
+                            @size-change="handleSizeChange"
+                            @current-change="handleCurrentChange"
+                            :current-page="currentPage"
+                            :page-sizes="[2, 5, 10, 20, 40]"
+                            :page-size="pagesize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="rowslength">
+                    </el-pagination>
+                </div>
+                <br/>
+                <div class="block" style="width:100%">
+                    <div  style="width:100%;">
+                        <el-date-picker
+                                v-model="value1"
+                                align="right"
+                                format="yyyy/MM/dd HH:mm"
+                                value-format="yyyy-MM-dd@HH:mm"
+                                type="datetime"
+                                placeholder="选择开始日期时间"
+                                :picker-options="pickerOptions1">
+                        </el-date-picker>
+
+                        <el-date-picker
+                                v-model="value2"
+                                align="right"
+                                format="yyyy/MM/dd HH:mm"
+                                value-format="yyyy-MM-dd@HH:mm"
+                                type="datetime"
+                                placeholder="选择结束日期时间"
+                                :picker-options="pickerOptions2">
+                        </el-date-picker>
+
+                    </div>
+                    <div  style="width:50%;">
+                        <el-input v-model="input3" placeholder="请先获取rowkey,rowkey的获取请选择上面列表的查询详情" ></el-input>
+                    <!--<el-input v-model="input1" placeholder="请输入数据采集器编号"></el-input>
+                    <el-input v-model="input2" placeholder="请输入组件编号"></el-input>-->
+                    </div>
+                    <div>
+                        <el-button type="success" round @click="handleSearch">查询</el-button>
+                    </div>
+                </div>
+                <el-table
+                        :data="columnDatas"
+                        border
+                        style="width: 100%;background: #c6e2ff"
+                        :header-cell-style="{
+                            'background-color': '#c6e2ff'
+
+                        }"
+                        :cell-style="{
+                            'background-color': '#c6e2ff'
+
+                        }"
+                        >
+                    <el-table-column
+                             label="详细数据展示" style="width:100%">
+                        <template slot-scope="scope">
+                            <p v-html='scope.row.summary'></p>
+                        </template>
+                    </el-table-column>
+
+
+
+                </el-table>
+                <div align="center">
+                    <el-pagination
+                            @size-change="handleDataSizeChange"
+                            @current-change="handleDataCurrentChange"
+                            :current-page="currentDataPage"
+                            :page-sizes="[2, 5, 10, 20, 40]"
+                            :page-size="pagedatasize"
+                            layout="total, sizes, prev, pager, next, jumper"
+                            :total="rowsdatalength">
+                    </el-pagination>
+                </div>
+            </el-main>
+        </el-container>
+
+        <el-dialog
+                :title="tablename_data"
+                :visible.sync="dialogVisible"
+                width="30%"
+
+                :show-close = "false">
+            <!--<span>这是一段信息</span>-->
+
+            <el-input v-model="input" placeholder="请设置过滤条件"></el-input>
+            <span slot="footer" class="dialog-footer">
+    <el-button @click="dialogVisible = false">取 消</el-button>
+    <el-button type="primary" @click="confirmdata">确 定</el-button>
+  </span>
+        </el-dialog>
+    </el-container>
+</div>
+
+</body>
+
+<script>
+
+
+    function getFormatDate(time) {
+        return time.getFullYear() + "-" + (time.getMonth() + 1) + "-" + time.getDate();
+    }
+
+    vue = new Vue({
+        el:'#app',
+        data:{
+            tables: [],
+            tableData: [],
+            columnDatas: [],
+            dialogVisible: false,
+            tablename_data: '',
+            textarea: '',
+            input: '',
+            tempRowkey:'',
+            pickerOptions1: {
+                disabledDate(time) {
+                    return time.getTime() > Date.now();
+                },
+                shortcuts: [{
+                    text: '今天',
+                    onClick(picker) {
+                        picker.$emit('pick', new Date());
+                    }
+                }, {
+                    text: '昨天',
+                    onClick(picker) {
+                        const date = new Date();
+                        date.setTime(date.getTime() - 3600 * 1000 * 24);
+                        picker.$emit('pick', date);
+                    }
+                }, {
+                    text: '一周前',
+                    onClick(picker) {
+                        const date = new Date();
+                        date.setTime(date.getTime() - 3600 * 1000 * 24 * 7);
+                        picker.$emit('pick', date);
+                    }
+                }]
+            },
+            pickerOptions2: {
+                disabledDate(time) {
+                    return time.getTime() > Date.now();
+                },
+                shortcuts: [{
+                    text: '今天',
+                    onClick(picker) {
+                        picker.$emit('pick', new Date());
+                    }
+                }, {
+                    text: '昨天',
+                    onClick(picker) {
+                        const date = new Date();
+                        date.setTime(date.getTime() - 3600 * 1000 * 24);
+                        picker.$emit('pick', date);
+                    }
+                }, {
+                    text: '一周前',
+                    onClick(picker) {
+                        const date = new Date();
+                        date.setTime(date.getTime() - 3600 * 1000 * 24 * 7);
+                        picker.$emit('pick', date);
+                    }
+                }]
+            },
+            value1: '',
+            value2: '',
+            input:'.*-1|2:.*',
+            input1:"",
+            input2:"",
+            input3:"",
+            currentPage:1,
+            pagesize:2,
+            rowslength:0,
+            currentDataPage:1,
+            pagedatasize:5,
+            rowsdatalength:0
+
+
+        },
+        beforeCreate(){
+
+                this.$http({
+                    url: '/hbase/searchTables',
+                    method: 'GET',
+                    headers: {
+                        'Content-Type':'text/plain'
+                    }
+
+                }).then(function (res) {
+                    var tables_data = [];
+                    for (var i = 0; i < res.body.length; i++) {
+                        //alert(JSON.stringify(res.body[i]));
+                        var tmp = {};
+                        tmp.tablename = JSON.stringify(res.body[i]).replace(/\"/g, "");
+                        tables_data.push(tmp);
+                    }
+
+                    this.tables = tables_data;
+
+                    // 请求成功回调
+                }, function () {
+                    // 请求失败回调
+                });
+
+        },
+        methods:{
+            openTable(row, event, column){
+                this.tablename_data = row.tablename;
+                this.dialogVisible = true;
+
+            },
+            handleClick(row){
+              var tables_summary_data = [];
+              var tmp = {};
+              tmp.summary = row.data;
+              tables_summary_data.push(tmp);
+              this.input3 = row.rowkey;
+              this.columnDatas = tables_summary_data;
+            },
+            handleSearch(){
+
+                if(this.input3 == ''){
+                    alert("请先查询行并点击详细查询再执行列数据查询");
+                    return;
+                }
+                if(this.value1 == '' && this.value2 == ''){
+                    alert("请先选择要查询的时间");
+                    return;
+                }else{
+                    var startDate = this.value1;
+                    var endDate = this.value2;
+                    var tablename = this.tablename_data;
+                    var url = '/hbase/searchData/' +
+                               tablename + "/" +
+                               this.input3 + "/" +
+                               this.pagedatasize + "/" +
+                               this.currentDataPage + "/" +
+                               startDate + "/" +
+                               endDate
+                    this.$http({
+                        url: url,
+                        method: 'GET',
+                        headers: {
+                            'Content-Type':'text/plain'
+                        }
+
+                    }).then(function (res) {
+                        var tables_act_data = [];
+                        this.rowsdatalength = res.body.size;
+                        for (var i = 0; i < res.body.results.length; i++) {
+                            var tmp = {};
+                            var data = res.body.results[i];
+                            var ret = "<table style='background:#c6e2ff;font-size:12px; border-width: 1px;border-style: solid;border-color: #999999;'>";
+                            var flag = 0;
+                            for (var val in data) {
+
+                                if(flag > 3){
+                                    ret += "</tr>";
+                                    flag = 0;
+                                }else if(flag == 0){
+                                    ret +="<tr>";
+                                    ret += "<td style=\"background-color:#FDFF72\">" + val + " : " + data[val] + "</td>";
+                                    flag ++;
+                                }else{
+                                    ret += "<td style=\"background-color:#FDFF72\">" + val + " : " + data[val] + "</td>";
+                                    flag ++;
+                                }
+
+                                //输出如:name
+                            }
+
+                            tmp.rowkey = data.rowkey;
+                            tmp.summary = ret;
+                            tables_act_data.push(tmp);
+                        }
+                        this.columnDatas = null;
+                        this.columnDatas = tables_act_data;
+                        // 请求成功回调
+                    }, function () {
+                        // 请求失败回调
+                    });
+                }
+
+
+            },
+            handleSizeChange: function (size) {
+                this.pagesize = size;
+                var url = '/hbase/searchData/' + size;
+                this.$http({
+                    url: url,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type':'text/plain'
+                    }
+
+                }).then(function (res) {
+                    var tables_act_data = [];
+                    this.rowslength = res.body.size;
+                    for (var i = 0; i < res.body.results.length; i++) {
+                        var data = JSON.parse(res.body.results[i]);
+                        var ret = "<table style='background:#c6e2ff;font-size:12px; border-width: 1px;border-style: solid;border-color: #999999;'>";
+                        var flag = 0;
+                        for (var val in data) {
+
+                            if(flag > 3){
+                                ret += "</tr>";
+                                flag = 0;
+                            }else if(flag == 0){
+                                ret +="<tr>";
+                                ret += "<td style=\"background-color:#FDFF72\">" + val + " : " + data[val] + "</td>";
+                                flag ++;
+                            }else{
+                                ret += "<td style=\"background-color:#FDFF72\">" + val + " : " + data[val] + "</td>";
+                                flag ++;
+                            }
+
+                            //输出如:name
+                        }
+                        var tmp = {};
+                        tmp.rowkey = data.rowkey;
+                        tmp.data = ret;
+                        tables_act_data.push(tmp);
+                    }
+                    this.tableData = tables_act_data;
+                    // 请求成功回调
+                }, function () {
+                    // 请求失败回调
+                });
+            },
+            handleCurrentChange: function(currentPage){
+                this.currentPage = currentPage;
+                var url = '/hbase/searchData/' + currentPage + "/" + this.pagesize;
+                    this.$http({
+                        url: url,
+                        method: 'GET',
+                        headers: {
+                            'Content-Type':'text/plain'
+                        }
+
+                    }).then(function (res) {
+                        var tables_act_data = [];
+                        this.rowslength = res.body.size;
+                        for (var i = 0; i < res.body.results.length; i++) {
+                            var data = JSON.parse(res.body.results[i]);
+                            var ret = "<table style='background:#c6e2ff;font-size:12px; border-width: 1px;border-style: solid;border-color: #999999;'>";
+                            var flag = 0;
+                            for (var val in data) {
+
+                                if(flag > 3){
+                                    ret += "</tr>";
+                                    flag = 0;
+                                }else if(flag == 0){
+                                    ret +="<tr>";
+                                    ret += "<td style=\"background-color:#FDFF72\">" + val + " : " + data[val] + "</td>";
+                                    flag ++;
+                                }else{
+                                    ret += "<td style=\"background-color:#FDFF72\">" + val + " : " + data[val] + "</td>";
+                                    flag ++;
+                                }
+
+                                //输出如:name
+                            }
+                            var tmp = {};
+                            tmp.rowkey = data.rowkey;
+                            tmp.data = ret;
+                            tables_act_data.push(tmp);
+                        }
+                        this.tableData = tables_act_data;
+                        // 请求成功回调
+                    }, function () {
+                        // 请求失败回调
+                    });
+
+
+
+            },
+            confirmdata(){
+                if(this.input == ''){
+                    alert("正则表达式为必填,必须通过正则表达式来过滤行！");
+                }else{
+                    this.dialogVisible = false;
+
+                    var url = '/hbase/searchData/' + this.tablename_data + "/" + this.input + "/" + this.pagesize;
+                    this.$http({
+                        url: url,
+                        method: 'GET',
+                        headers: {
+                            'Content-Type':'text/plain'
+                        }
+
+                    }).then(function (res) {
+                        var tables_act_data = [];
+                        this.rowslength = res.body.size;
+                        for (var i = 0; i < res.body.results.length; i++) {
+                            var data = JSON.parse(res.body.results[i]);
+                            var ret = "<table style='background:#c6e2ff;font-size:12px; border-width: 1px;border-style: solid;border-color: #999999;'>";
+                            var flag = 0;
+                            for (var val in data) {
+                                if(flag > 3){
+                                    ret += "</tr>";
+                                    flag = 0;
+                                }else if(flag == 0){
+                                    ret +="<tr>";
+                                    ret += "<td style=\"background-color:#FDFF72\">" + val + " : " + data[val] + "</td>";
+                                    flag ++;
+                                }else{
+                                    ret += "<td style=\"background-color:#FDFF72\">" + val + " : " + data[val] + "</td>";
+                                    flag ++;
+                                }
+                            }
+                            var tmp = {};
+                            tmp.rowkey = data.rowkey;
+                            tmp.data = ret;
+                            tables_act_data.push(tmp);
+                        }
+                    this.tableData = tables_act_data;
+                            // 请求成功回调
+                    }, function () {
+                        // 请求失败回调
+                    });
+                }
+
+
+            },
+            handleDataSizeChange: function(size){
+                this.pagedatasize = size;
+                var startDate = this.value1;
+                var endDate = this.value2;
+                var url = "/hbase/searchDetailSize/" + size + "/" + startDate + "/" + endDate;
+                this.$http({
+                    url: url,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type':'text/plain'
+                    }
+
+                }).then(function (res) {
+                    var tables_act_data = [];
+                    this.rowslength = res.body.size;
+                    for (var i = 0; i < res.body.results.length; i++) {
+                        var data = res.body.results[i];
+                        var ret = "<table style='background:#c6e2ff;font-size:12px; border-width: 1px;border-style: solid;border-color: #999999;'>";
+                        var flag = 0;
+                        for (var val in data) {
+
+                            if(flag > 3){
+                                ret += "</tr>";
+                                flag = 0;
+                            }else if(flag == 0){
+                                ret +="<tr>";
+                                ret += "<td style=\"background-color:#FDFF72\">" + val + " : " + data[val] + "</td>";
+                                flag ++;
+                            }else{
+                                ret += "<td style=\"background-color:#FDFF72\">" + val + " : " + data[val] + "</td>";
+                                flag ++;
+                            }
+
+                            //输出如:name
+                        }
+                        var tmp = {};
+                        tmp.rowkey = data.rowkey;
+                        tmp.summary = ret;
+                        tables_act_data.push(tmp);
+                    }
+                    alert(tables_act_data.length);
+                    this.columnDatas = tables_act_data;
+                    // 请求成功回调
+                }, function () {
+                    // 请求失败回调
+                });
+            },
+            handleDataCurrentChange: function(currentPage){
+                this.currentPage = currentPage;
+                var startDate = this.value1;
+                var endDate = this.value2;
+                var url = '/hbase/searchDetailSize/' + this.pagedatasize + "/" + startDate + "/" + endDate + "/" + currentPage;
+                this.$http({
+                    url: url,
+                    method: 'GET',
+                    headers: {
+                        'Content-Type':'text/plain'
+                    }
+
+                }).then(function (res) {
+                    var tables_act_data = [];
+                    this.rowslength = res.body.size;
+                    for (var i = 0; i < res.body.results.length; i++) {
+                        var data = res.body.results[i];
+                        var ret = "<table style='background:#c6e2ff;font-size:12px; border-width: 1px;border-style: solid;border-color: #999999;'>";
+                        var flag = 0;
+                        for (var val in data) {
+
+                            if(flag > 3){
+                                ret += "</tr>";
+                                flag = 0;
+                            }else if(flag == 0){
+                                ret +="<tr>";
+                                ret += "<td style=\"background-color:#FDFF72\">" + val + " : " + data[val] + "</td>";
+                                flag ++;
+                            }else{
+                                ret += "<td style=\"background-color:#FDFF72\">" + val + " : " + data[val] + "</td>";
+                                flag ++;
+                            }
+
+                            //输出如:name
+                        }
+                        var tmp = {};
+                        tmp.rowkey = data.rowkey;
+                        tmp.summary = ret;
+                        tables_act_data.push(tmp);
+                    }
+                    this.columnDatas = tables_act_data;
+                    // 请求成功回调
+                }, function () {
+                    // 请求失败回调
+                });
+            }
+
+        }
+    });
+</script>
+
+</html>

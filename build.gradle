@@ -1,0 +1,63 @@
+group 'com.easy.hbase.springboot'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile('org.codehaus.groovy:groovy-all:2.3.11'){
+        exclude module: 'slf4j-log4j12'
+
+    }
+    compile('org.springframework.boot:spring-boot-starter-web'){
+        exclude module: 'slf4j-log4j12'
+    }
+    compile('org.springframework.boot:spring-boot-starter-freemarker')
+
+    compile('org.springframework.data:spring-data-hadoop-boot:2.5.0.RELEASE') {
+        exclude module: 'slf4j-log4j12'
+    }
+    compile('org.springframework.data:spring-data-hadoop:2.5.0.RELEASE'){
+        exclude module: 'slf4j-log4j12'
+    }
+    compile('org.apache.hbase:hbase-client:1.4.0'){
+        exclude module: 'slf4j-log4j12'
+    }
+    compile('com.alibaba:fastjson:1.2.10')
+
+
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+jar {
+    baseName = 'easyHbase'
+    version = '1.0-SNAPSHOT'
+    manifest {
+        attributes "Manifest-Version": 1.0,
+                'Main-Class': 'com.easy.hbase.EasyMain'
+    }
+    into('lib') {
+        from configurations.runtime
+    }
+}
+
+buildscript {
+    ext {
+        springBootVersion = '1.5.2.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")    }
+    }
+
+

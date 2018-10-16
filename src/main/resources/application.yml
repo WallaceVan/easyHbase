@@ -1,0 +1,9 @@
+hbase:
+  zookeeper:
+    quorum: 10.4.11.183,10.4.11.184,10.4.11.185
+    property:
+      clientPort: 2181
+server:
+  port: 9987
+logging:
+  config: classpath:logging-config.xml

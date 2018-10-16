@@ -1,0 +1,33 @@
+#
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+version: '2'
+
+services:
+  easyHbase:
+    container_name: easyHbase
+    image: base
+    tty: true
+    hostname: easyHbase
+    environment:
+      - JAVA_OPTS="-server -Xms1536m -Xmx1536m -XX:NewSize=320m -XX:MaxNewSize=320m -XX:PermSize=96m -XX:MaxPermSize=256m -Xmn500m -XX:MaxTenuringThreshold=5"
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=artifacts_default
+      - TZ=Asia/Shanghai
+      - LANG=C.UTF-8
+    ports:
+      - 9987:9987
+    network_mode: host
+    volumes:
+      - ../start/:/start
+      - ../jars/:/jars
+      - ../log/:/log
+      - /etc/localtime:/etc/localtime:ro
+    extra_hosts:
+      dev1: 10.4.11.183
+      dev2: 10.4.11.184
+      dev3: 10.4.11.185
+      solarfacconsumer: 127.0.0.1
+    command: bash -c "./start/start.sh && tail -f /dev/null"
