@@ -4,6 +4,7 @@ import org.apache.hadoop.fs.shell.CopyCommands
 import org.apache.hadoop.hbase.Cell
 import org.apache.hadoop.hbase.CellUtil
 import org.apache.hadoop.hbase.client.Get
+import org.apache.hadoop.hbase.client.HTableInterface
 import org.apache.hadoop.hbase.client.Result
 import org.apache.hadoop.hbase.client.Scan
 import org.apache.hadoop.hbase.filter.ColumnPaginationFilter
@@ -16,8 +17,13 @@ import org.apache.hadoop.hbase.util.Bytes
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.hadoop.hbase.HbaseTemplate
 import org.springframework.data.hadoop.hbase.RowMapper
+import org.springframework.data.hadoop.hbase.TableCallback
 import org.springframework.stereotype.Service
 import com.alibaba.fastjson.JSONObject
+
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Service
 class HbaseSearchService {
@@ -33,8 +39,14 @@ class HbaseSearchService {
         def scanCount = new Scan()
         def rc = new RegexStringComparator(reg)
         def rf = new RowFilter(CompareFilter.CompareOp.EQUAL, rc)
+        def cf = new ColumnPaginationFilter(1,0)
         fl.addFilter(rf)
+        fl.addFilter(cf)
+
+
         scanCount.setFilter(fl)
+        scanCount.addFamily("data".getBytes())
+        //scanCount.setMaxResultSize(1)
         List<JSONObject> results = template.find(
                 tableName,
                 scanCount,
@@ -90,6 +102,7 @@ class HbaseSearchService {
                                      String currentPage,
                                      String startDate,
                                      String endDate) throws Exception{
+        def ftf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm")
         def mapResult = new HashMap<String, Object>()
         def rowMap = SessionAndDataMemoryMap.get(sessionId)
         def rowResults = rowMap.get("rowResults")
@@ -112,12 +125,18 @@ class HbaseSearchService {
         //需要重新加载数据到内存
 
         if (flag != 0){
+
+            LocalDateTime start_parse = LocalDateTime.parse(startTime, ftf)
+            LocalDateTime end_parse = LocalDateTime.parse(endTime, ftf)
+            long start_timestamp = LocalDateTime.from(start_parse).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()/1000
+            long end_timestamp = LocalDateTime.from(end_parse).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()/1000
             def rangeFilter =new ColumnRangeFilter(
-                    Bytes.toBytes(startTime),
+                    Bytes.toBytes(start_timestamp.toString()),
                     false,
-                    Bytes.toBytes(endTime),
+                    Bytes.toBytes(end_timestamp.toString()),
                     false)
             def get = new Get(Bytes.toBytes(rowKey))
+            //get.setFilter(rangeFilter)
             def scan = new Scan(get)
             scan.setFilter(rangeFilter)
 
@@ -139,6 +158,7 @@ class HbaseSearchService {
                     }
                 }
             )
+
             if (resultsTemplate.size() != 0){
                 results = resultsTemplate.get(0)
                 def tempResults = new HashMap<String,List<JSONObject>>()
