@@ -118,9 +118,15 @@ class HbaseSearchService {
             if(results == null){
                 rowMap.remove("columnResults")
                 flag = 1
+            }else{
+                def rowkey_session = results.get(0).get("rowkey")
+                if(rowkey_session != rowKey) {
+                    rowMap.remove("columnResults")
+                    flag = 1
+                }
             }
         }else{
-            flag =1
+            flag = 1
         }
         //需要重新加载数据到内存
 
